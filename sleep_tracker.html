@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник сна</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --accent: #818cf8;
+            --card-bg: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 15px;
+            border-radius: 16px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .clock-container:hover {
+            border-color: var(--accent);
+            background: rgba(129, 140, 248, 0.1);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .indicator-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .value-badge {
+            background: var(--accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            min-width: 32px;
+            text-align: center;
+            animation: pop-in 0.2s ease-out;
+        }
+
+        @keyframes pop-in {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .btn-action {
+            background: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-action:active {
+            background: var(--accent);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            width: 100%;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="date"],
+        input[type="number"] {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            color: white;
+            width: 100%;
+            outline: none;
+        }
+
+        /* Стили для выбора типа сна */
+        .dream-type-selector {
+            display: flex;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 4px;
+            border-radius: 14px;
+            margin-top: 15px;
+            border: 1px solid #334155;
+            display: none;
+        }
+
+        .dream-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+
+        .dream-option.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .dream-option span {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .clock-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .clock-picker-box {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 32px;
+            text-align: center;
+            width: 340px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            padding: 5px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            color: var(--accent);
+            background: rgba(129, 140, 248, 0.1);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1 class="text-3xl font-bold tracking-tight">Дневник сна 🌙</h1>
+        </div>
+
+        <div class="card">
+            <label class="label">Дата записи</label>
+            <input type="date" id="sleepDate">
+        </div>
+
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-4 text-indigo-300">Расписание</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="clock-container" onclick="openClock('bedTime')">
+                    <span class="label">Лёг в постель</span>
+                    <div id="bedTimeDisplay" class="text-xl font-bold">22:00</div>
+                </div>
+                <div class="clock-container" onclick="openClock('lightOffTime')">
+                    <span class="label">Выключил свет</span>
+                    <div id="lightOffTimeDisplay" class="text-xl font-bold">22:15</div>
+                </div>
+                <div class="clock-container" onclick="openClock('wakeUpTime')">
+                    <span class="label">Проснулся</span>
+                    <div id="wakeUpTimeDisplay" class="text-xl font-bold">07:00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="label mb-0">Качество сна</label>
+                    <div class="indicator-box">
+                        <span id="qualityVal" class="value-badge">7</span>
+                        <span id="qualityEmoji" class="text-2xl">🙂</span>
+                    </div>
+                </div>
+                <input type="range" id="qualityRange" min="1" max="10" value="7" oninput="updateRange('quality')">
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="label mb-0">Уровень энергии</label>
+                    <div class="indicator-box">
+                        <span id="energyVal" class="value-badge">7</span>
+                        <span id="energyEmoji" class="text-2xl">🙂</span>
+                    </div>
+                </div>
+                <input type="range" id="energyRange" min="1" max="10" value="7" oninput="updateRange('energy')">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex justify-between items-center">
+                <label class="label mb-0">Пробуждения ночью</label>
+                <div class="flex items-center gap-4">
+                    <button class="btn-action" onclick="changeAwakening(-1)">−</button>
+                    <span id="awakeningsCount" class="text-2xl font-bold text-indigo-400">0</span>
+                    <button class="btn-action" onclick="changeAwakening(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <label class="label mb-1">Снились ли сны?</label>
+                    <span id="dreamsEmoji" class="text-2xl">😑</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dreamsToggle" onchange="updateDreamsUI()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- Трехпозиционный переключатель типа снов -->
+            <div id="dreamTypeSelector" class="dream-type-selector">
+                <div class="dream-option" onclick="setDreamType('Кошмары')">
+                    <span>👿</span>Кошмары
+                </div>
+                <div class="dream-option active" onclick="setDreamType('Нейтральный')">
+                    <span>😏</span>Нейтральный
+                </div>
+                <div class="dream-option" onclick="setDreamType('Приятный')">
+                    <span>😇</span>Приятный
+                </div>
+            </div>
+
+            <div class="input-group mt-6">
+                <label class="label">Комментарии</label>
+                <textarea id="comment" rows="3" placeholder="Спорт, алкоголь, стресс..."></textarea>
+            </div>
+        </div>
+
+        <button class="btn-submit text-white" id="submitBtn" onclick="submitDiary()">ЗАПИСАТЬ ДАННЫЕ</button>
+    </div>
+
+    <!-- Модалка часов остается без изменений -->
+    <div id="clockModal" class="clock-modal">
+        <div class="clock-picker-box">
+            <div class="mode-toggle">
+                <span id="btnModeHours" class="mode-btn active" onclick="switchPickerMode('hours')">ЧАСЫ</span>
+                <span class="text-slate-600">|</span>
+                <span id="btnModeMinutes" class="mode-btn" onclick="switchPickerMode('minutes')">МИНУТЫ</span>
+            </div>
+            <div class="text-5xl font-mono mb-6 text-indigo-400" id="clockTimePreview">22:00</div>
+            <canvas id="clockCanvas" width="300" height="300"></canvas>
+            <div class="mt-8 flex justify-center gap-4">
+                <button class="btn-action w-full bg-slate-700" onclick="closeClock(false)">ОТМЕНА</button>
+                <button class="btn-action w-full bg-indigo-500" onclick="closeClock(true)">ГОТОВО</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR NEW DEPLOYMENT URL AFTER UPDATING SCRIPT
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbsVrUwAPwsz5eWmsBK3ogYfxy62S6BO_Y44rMHXcyLfnDMJJQmmaZ2__GsAq6WzBoqA/exec';
+
+        const state = {
+            times: { bedTime: "22:00", lightOffTime: "22:15", wakeUpTime: "07:00" },
+            activeId: null, tempH: 22, tempM: 0, mode: 'hours', isDragging: false,
+            awakenings: 0,
+            dreamType: 'Нейтральный'
+        };
+
+        document.getElementById('sleepDate').valueAsDate = new Date();
+
+        function updateRange(type) {
+            const val = document.getElementById(type + 'Range').value;
+            const emojiEl = document.getElementById(type + 'Emoji');
+            const valEl = document.getElementById(type + 'Val');
+
+            valEl.innerText = val;
+            valEl.style.animation = 'none';
+            void valEl.offsetWidth;
+            valEl.style.animation = 'pop-in 0.2s ease-out';
+
+            emojiEl.innerText = val <= 3 ? "😴" : val <= 6 ? "🥱" : val <= 9 ? "🙂" : "🤩";
+        }
+
+        function updateDreamsUI() {
+            const checked = document.getElementById('dreamsToggle').checked;
+            const emojiEl = document.getElementById('dreamsEmoji');
+            const selectorEl = document.getElementById('dreamTypeSelector');
+
+            emojiEl.innerText = checked ? "😵‍💫" : "😑";
+            selectorEl.style.display = checked ? "flex" : "none";
+        }
+
+        function setDreamType(type) {
+            state.dreamType = type;
+            const options = document.querySelectorAll('.dream-option');
+            options.forEach(opt => {
+                if (opt.innerText.includes(type)) opt.classList.add('active');
+                else opt.classList.remove('active');
+            });
+        }
+
+        function changeAwakening(delta) {
+            state.awakenings = Math.max(0, state.awakenings + delta);
+            document.getElementById('awakeningsCount').innerText = state.awakenings;
+        }
+
+        // Часы
+        const canvas = document.getElementById('clockCanvas');
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const outerR = 125; const innerR = 85; const minuteR = 120;
+
+        function openClock(id) {
+            state.activeId = id;
+            const [h, m] = state.times[id].split(':').map(Number);
+            state.tempH = h; state.tempM = m; state.mode = 'hours';
+            document.getElementById('clockModal').style.display = 'flex';
+            updateUI(); draw();
+        }
+
+        function switchPickerMode(m) { state.mode = m; updateUI(); draw(); }
+
+        function updateUI() {
+            document.getElementById('clockTimePreview').innerText = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
+            document.getElementById('btnModeHours').className = `mode-btn ${state.mode === 'hours' ? 'active' : ''}`;
+            document.getElementById('btnModeMinutes').className = `mode-btn ${state.mode === 'minutes' ? 'active' : ''}`;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); ctx.arc(cx, cy, outerR + 15, 0, Math.PI * 2); ctx.fillStyle = '#1e293b'; ctx.fill();
+            if (state.mode === 'hours') {
+                drawNumbers(13, 24, outerR, state.tempH);
+                drawNumbers(1, 12, innerR, state.tempH);
+            } else {
+                drawNumbers(0, 59, minuteR, state.tempM);
+            }
+            let angle, r;
+            if (state.mode === 'hours') {
+                r = (state.tempH >= 13 || state.tempH === 0) ? outerR : innerR;
+                angle = ((state.tempH % 12) * 30 - 90) * (Math.PI / 180);
+            } else {
+                r = minuteR; angle = (state.tempM * 6 - 90) * (Math.PI / 180);
+            }
+            const tx = cx + r * Math.cos(angle); const ty = cy + r * Math.sin(angle);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tx, ty); ctx.strokeStyle = '#818cf8'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(tx, ty, 18, 0, Math.PI * 2); ctx.fillStyle = 'rgba(129, 140, 248, 0.4)'; ctx.fill();
+        }
+
+        function drawNumbers(start, end, r, current) {
+            ctx.font = '14px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for (let i = 1; i <= 12; i++) {
+                let val;
+                if (state.mode === 'hours') {
+                    val = (start === 13) ? (i + 12) : i; if (val === 24) val = 0;
+                } else { val = (i * 5) % 60; }
+                const angle = (i * 30 - 90) * (Math.PI / 180);
+                const x = cx + r * Math.cos(angle); const y = cy + r * Math.sin(angle);
+                const isSelected = (current === val);
+                if (isSelected) {
+                    ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.fillStyle = '#818cf8'; ctx.fill(); ctx.fillStyle = '#fff';
+                } else { ctx.fillStyle = '#64748b'; }
+                ctx.fillText(val.toString().padStart(state.mode === 'minutes' ? 2 : 1, '0'), x, y);
+            }
+        }
+
+        function handleInput(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left; const y = clientY - rect.top;
+            const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            if (state.mode === 'hours') {
+                let h = Math.round(angle / 30) % 12;
+                if (dist > (innerR + outerR) / 2) state.tempH = h === 0 ? 0 : h + 12;
+                else state.tempH = h === 0 ? 12 : h;
+            } else { state.tempM = Math.round(angle / 6) % 60; }
+            updateUI(); draw();
+        }
+
+        canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleInput(e); });
+        window.addEventListener('mousemove', (e) => { if (state.isDragging) handleInput(e); });
+        window.addEventListener('mouseup', () => { if (state.isDragging) { state.isDragging = false; if (state.mode === 'hours') setTimeout(() => switchPickerMode('minutes'), 300); } });
+
+        function closeClock(save) {
+            if (save) {
+                const timeStr = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
+                state.times[state.activeId] = timeStr;
+                document.getElementById(state.activeId + 'Display').innerText = timeStr;
+            }
+            document.getElementById('clockModal').style.display = 'none';
+        }
+
+        async function submitDiary() {
+            const btn = document.getElementById('submitBtn');
+            const hasDreams = document.getElementById('dreamsToggle').checked;
+
+            const payload = {
+                type: 'sleep', // Explicit type
+                date: document.getElementById('sleepDate').value,
+                bedTime: state.times.bedTime,
+                lightOffTime: state.times.lightOffTime,
+                wakeUpTime: state.times.wakeUpTime,
+                quality: document.getElementById('qualityRange').value,
+                energy: document.getElementById('energyRange').value,
+                awakeningCount: state.awakenings,
+                dreams: hasDreams ? "Да" : "Нет",
+                dreamType: hasDreams ? state.dreamType : "",
+                comment: document.getElementById('comment').value
+            };
+
+            btn.disabled = true;
+            btn.innerText = "ОТПРАВКА...";
+
+            // Use fetch with no-cors standard
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Success (blindly assumes success due to no-cors)
+                btn.innerText = "ЗАПИСАНО! ✅";
+                btn.classList.add('bg-green-600');
+                setTimeout(() => {
+                    btn.innerText = "ЗАПИСАТЬ ДАННЫЕ";
+                    btn.classList.remove('bg-green-600');
+                    btn.disabled = false;
+                }, 3000);
+
+            } catch (e) {
+                console.error(e);
+                btn.innerText = "ОШИБКА ❌";
+                setTimeout(() => {
+                    btn.innerText = "ЗАПИСАТЬ ДАННЫЕ";
+                    btn.disabled = false;
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+
+</html>

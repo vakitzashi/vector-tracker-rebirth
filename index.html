@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой Трекер</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-sleep: #818cf8;
+            --accent-pills: #34d399;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #818cf8, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .nav-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-card.sleep:hover {
+            border-color: var(--accent-sleep);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 1) 0%, rgba(129, 140, 248, 0.1) 100%);
+        }
+
+        .nav-card.pills:hover {
+            border-color: var(--accent-pills);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 1) 0%, rgba(52, 211, 153, 0.1) 100%);
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .label {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sub-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1 class="app-title">VECTOR TRACKER</h1>
+
+    <div class="grid-container">
+        <a href="sleep_tracker.html" class="nav-card sleep">
+            <div class="icon">🌙</div>
+            <div class="label">Дневник Сна</div>
+            <div class="sub-label">Трекинг качества сна. Заполняется каждое утро</div>
+        </a>
+
+        <a href="pills_tracker.html" class="nav-card pills">
+            <div class="icon">💊</div>
+            <div class="label">Стек Препаратов</div>
+            <div class="sub-label">Учёт приёма препаратов</div>
+        </a>
+    </div>
+
+</body>
+
+</html>

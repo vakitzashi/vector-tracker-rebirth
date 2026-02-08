@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер Таблеток</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #34d399;
+            --danger: #f87171;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .pill-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Grid Layout: 2 Columns */
+        #pillsGrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding-bottom: 20px;
+        }
+
+        /* Section Headers */
+        .section-title {
+            grid-column: 1 / -1;
+            /* Span full width */
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            padding-left: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Card Styles - Dark Theme Compact */
+        .pill-card {
+            background: #1e293b;
+            /* Dark Slate 800 */
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            color: #e2e8f0;
+        }
+
+        .pill-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Top Row: Checkbox - Name - Time */
+        .card-top {
+            display: flex;
+            flex-direction: column;
+            /* Stack for narrow width */
+            align-items: flex-start;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .card-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .pill-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            line-height: 1.2;
+            word-break: break-word;
+            /* Prevent overflow */
+        }
+
+        .pill-time {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #818cf8;
+            /* Indigo-400 */
+            white-space: nowrap;
+        }
+
+        /* Middle Row: Dose & Instructions */
+        .card-middle {
+            text-align: left;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 500;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        /* Bottom Row: Comments */
+        .card-bottom {
+            text-align: left;
+            font-size: 0.70rem;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 2px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 4px;
+        }
+
+        /* Add Card Special Style */
+        .add-card {
+            grid-column: 1 / -1;
+            /* Full width at bottom */
+            justify-content: center;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px dashed #475569;
+            box-shadow: none;
+            cursor: pointer;
+            min-height: 60px;
+            flex-direction: row;
+        }
+
+        /* Circular Checkbox */
+        .round-checkbox {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #475569;
+            background: transparent;
+            appearance: none;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .round-checkbox:checked {
+            background-color: #10b981;
+            /* Emerald-500 */
+            border-color: #10b981;
+        }
+
+        .round-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Delete button - hidden by default to clean UI, maybe show on swipe? 
+           For now, let's keep it very subtle in the corner or remove as per plan. 
+           User didn't ask for it in the layout description. I'll omit it from CSS/HTML for now. */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            user-select: none;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            color: white;
+            margin-bottom: 15px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #064e3b;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-danger {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            margin-top: 10px;
+        }
+
+        .log-history {
+            margin-top: 40px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+
+        .history-time {
+            color: #94a3b8;
+            font-family: monospace;
+        }
+
+        .history-name {
+            font-weight: 500;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 2000;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            bottom: 40px;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .pill-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .delete-btn:hover {
+            background: var(--danger);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <div class="header"
+            style="display: flex; justify-content: space-between; align-items: center; padding-right: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="index.html" class="back-btn" style="text-decoration: none;">←</a>
+                <h1 class="text-2xl font-bold text-slate-100">Мои Препараты</h1>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="location.reload()"
+                    style="background:none; border:none; font-size: 1.2rem; cursor: pointer;"
+                    title="Reload Page">⚠️</button>
+                <button onclick="fetchRemoteData()"
+                    style="background: #334155; border: 1px solid #475569; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🔄</button>
+            </div>
+        </div>
+
+        <div id="pillsGrid" class="pill-grid">
+            <!-- Cards will be injected here -->
+            <div class="pill-card add-card" onclick="openAddModal()">
+                <div class="add-icon">+</div>
+                <div>Добавить</div>
+            </div>
+        </div>
+
+        <div class="log-history">
+            <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-4">История сегодня</h3>
+            <div id="historyList">
+                <div class="text-center text-slate-500 py-4">Пока записей нет</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Pill Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Новый препарат</h2>
+            <input type="text" id="newPillName" placeholder="Название (напр. Витамин D)">
+            <input type="text" id="newPillDose" placeholder="Дозировка (напр. 1000 МЕ)">
+            <select id="newPillIcon">
+                <option value="💊">💊 Таблетка</option>
+                <option value="💉">💉 Укол</option>
+                <option value="💧">💧 Капли</option>
+                <option value="🧴">🧴 Мазь</option>
+                <option value="🥤">🥤 Порошок</option>
+            </select>
+            <button class="btn btn-primary" onclick="addPill()">Сохранить</button>
+            <button class="btn btn-secondary" onclick="closeModal('addModal')">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Confirm Log Modal -->
+    <div id="logModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-2" id="logPillName">Название</h2>
+            <p class="text-slate-400 mb-4 text-sm" id="logPillDose">Дозировка</p>
+
+            <label class="text-xs text-slate-500 mb-1 block">Комментарий (необязательно)</label>
+            <textarea id="logComment" rows="2" placeholder="Например: после еды"></textarea>
+
+            <button class="btn btn-primary" id="confirmLogBtn" onclick="confirmLog()">✅ Принять и записать</button>
+            <button class="btn btn-secondary" onclick="closeModal('logModal')">Отмена</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Записано! ✅</div>
+
+    <script>
+        // --- Configuration ---
+        // REPLACE WITH YOUR NEW DEPLOYMENT URL AFTER UPDATING SCRIPT
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbsVrUwAPwsz5eWmsBK3ogYfxy62S6BO_Y44rMHXcyLfnDMJJQmmaZ2__GsAq6WzBoqA/exec';
+
+        // --- State Management ---
+        let pills = JSON.parse(localStorage.getItem('myPills')) || [
+            { id: 1, name: 'Омега-3', dose: '1 капс.', icon: '💊' },
+            { id: 2, name: 'Витамин D', dose: '2000 ME', icon: '☀️' }
+        ];
+        let remoteHistory = [];
+        let activePillId = null;
+
+        // --- Initialization ---
+        async function init() {
+            renderPills();
+            renderHistoryLocal(); // Show local immediately
+            await fetchRemoteData(); // Fetch and merge
+        }
+
+        async function fetchRemoteData() {
+            const toast = document.getElementById('toast');
+            showToast('Синхронизация... ⏳');
+
+            try {
+                const headerUrl = `${SCRIPT_URL}?t=${Date.now()}`;
+                const response = await fetch(headerUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const text = await response.text();
+                let data = JSON.parse(text);
+
+                if (data.status === 'success') {
+                    if (data.raw_data && Array.isArray(data.raw_data)) {
+                        // PROCESS RAW DATA
+                        const rows = data.raw_data;
+                        const newPills = [];
+
+                        // Detect Header: If Row 0 has "Name" or "Название", skip it
+                        let startRow = 0;
+                        if (rows.length > 0) {
+                            const headerStr = rows[0].join(" ").toLowerCase();
+                            if (headerStr.includes("name") || headerStr.includes("название")) {
+                                startRow = 1;
+                            }
+                        }
+
+                        // Loop ALL rows
+                        for (let i = startRow; i < rows.length; i++) {
+                            const row = rows[i];
+                            // Skip only COMPLETELY empty rows or rows with no name
+                            const rowStr = row.join("").trim();
+                            if (!rowStr) continue;
+
+                            // Map Columns
+                            // 0: Time, 1: Name, 2: Dose, 3: Freq, 4: Instr, 5: Comment
+                            const pName = row[1] ? String(row[1]).trim() : "";
+                            // if (!pName && rowStr.length < 5) continue; // Skip noise? No, let's show everything to be safe.
+
+                            const displayName = pName || `(Без названия) Стр.${i + 1}`;
+
+                            // Parse Time
+                            let timeDisplay = row[0];
+                            if (typeof timeDisplay === 'string' && timeDisplay.includes('T')) {
+                                const d = new Date(timeDisplay);
+                                if (!isNaN(d.getTime())) timeDisplay = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            } else if (typeof timeDisplay === 'object' && timeDisplay instanceof Date) {
+                                timeDisplay = timeDisplay.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            }
+
+                            newPills.push({
+                                id: String(Date.now() + i),
+                                name: displayName,
+                                dose: String(row[2] || ''),
+                                icon: getIconForName(displayName),
+                                time: String(timeDisplay || ''),
+                                instructions: String(row[4] || ''),
+                                comment: String(row[5] || '')
+                            });
+                        }
+
+                        pills = newPills;
+                        localStorage.setItem('myPills', JSON.stringify(pills));
+                        renderPills();
+                        showToast(`Загружено: ${pills.length} записей`);
+
+                        // Remove previous debug info if any
+                        const oldDump = document.getElementById('debugDump');
+                        if (oldDump) oldDump.remove();
+
+                    } else {
+                        showToast('Таблица пуста / Неизвестный формат');
+                    }
+                } else {
+                    throw new Error(data.error || 'Ошибка данных');
+                }
+            } catch (e) {
+                console.warn('Fetch error:', e);
+                showToast(`ОШИБКА: ${e.message}`);
+            }
+        }
+
+        function syncSchedule(scheduleData) {
+            // EMERGENCY DEBUG ALERT
+            // This will annoy the user but PROVES the data arrived
+            // alert(`Sync received ${scheduleData.length} items from sheet.`);
+
+            const newPills = [];
+
+            scheduleData.forEach((row, index) => {
+                // Determine name. If missing, use "Unknown"
+                const pName = row.name || `Препарат #${index + 1}`;
+
+                // Format time
+                let timeDisplay = row.time;
+                if (typeof row.time === 'string' && row.time.includes('T')) {
+                    const d = new Date(row.time);
+                    if (!isNaN(d.getTime())) {
+                        timeDisplay = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+
+                newPills.push({
+                    id: String(Date.now() + index),
+                    name: pName,
+                    dose: row.dose || '',
+                    icon: getIconForName(pName),
+                    time: timeDisplay || '',
+                    instructions: row.instructions || '',
+                    comment: row.comment || ''
+                });
+            });
+
+            pills = newPills;
+            localStorage.setItem('myPills', JSON.stringify(pills));
+            renderPills();
+
+            // Dump to debug div
+            const debugDiv = document.getElementById('debugDump');
+            if (debugDiv) {
+                debugDiv.innerText = `UPDATED: ${new Date().toLocaleTimeString()}\nItems: ${newPills.length}\n` +
+                    newPills.map(p => `${p.name} [${p.time}]`).join('\n');
+            }
+
+            return newPills.length;
+        }
+
+        function getIconForName(name) {
+            const n = name.toLowerCase();
+            if (n.includes('вит')) return '☀️';
+            if (n.includes('омег') || n.includes('рыб')) return '🐟';
+            if (n.includes('сн') || n.includes('мел')) return '🌙';
+            if (n.includes('бол') || n.includes('гол')) return '🤕';
+            return '💊';
+        }
+
+        // Removed mergeHistory/checkForNewPills because we are syncing Config now.
+        // History is local only for now to avoid confusion with Schedule rows.
+
+        function renderHistoryLocal() {
+            const list = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
+            const today = new Date().toLocaleDateString();
+            const todayLogs = history.filter(h => new Date(h.timestamp).toLocaleDateString() === today);
+
+            list.innerHTML = '';
+            if (todayLogs.length > 0) {
+                todayLogs.sort((a, b) => b.timestamp - a.timestamp);
+                todayLogs.forEach(log => {
+                    renderHistoryItem(list, log.name, log.amount, log.timestamp);
+                });
+            } else {
+                list.innerHTML = '<div class="text-center text-slate-500 py-4">Сегодня приёмов не было</div>';
+            }
+        }
+
+        function renderPills() {
+            const grid = document.getElementById('pillsGrid');
+            grid.innerHTML = '';
+
+            // Get today's logs for checking state. 
+            // FIX: Match by Name AND Time (if available) to avoid turning on all "Aspirins"
+            const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
+            const today = new Date().toLocaleDateString();
+
+            // Map of "Name|Time" -> boolean
+            const checkedSet = new Set();
+            history.forEach(h => {
+                if (new Date(h.timestamp).toLocaleDateString() === today) {
+                    checkedSet.add(`${h.name}|${h.time || ''}`);
+                }
+            });
+
+            // Prepare groups
+            const groups = {
+                morning: { title: '🌅 Утро', items: [] },
+                day: { title: '☀️ День', items: [] },
+                evening: { title: '🌆 Вечер', items: [] },
+                night: { title: '🌙 Перед сном', items: [] },
+                other: { title: '📋 Другое', items: [] }
+            };
+
+            pills.forEach(pill => {
+                // Parse time
+                let minutes = -1;
+                if (pill.time && pill.time.includes(':')) {
+                    const [h, m] = pill.time.split(':').map(Number);
+                    minutes = h * 60 + m;
+                }
+
+                // Categorize
+                if (minutes >= 360 && minutes < 780) groups.morning.items.push(pill);
+                else if (minutes >= 780 && minutes < 960) groups.day.items.push(pill);
+                else if (minutes >= 960 && minutes <= 1320) groups.evening.items.push(pill); // 22:00 is 1320
+                else if (minutes > 1320 || (minutes >= 0 && minutes < 360)) groups.night.items.push(pill);
+                else groups.other.items.push(pill);
+            });
+
+            // Render Groups
+            const order = ['morning', 'day', 'evening', 'night', 'other'];
+
+            order.forEach(key => {
+                const group = groups[key];
+                if (group.items.length === 0) return;
+
+                // Sort items by time within group
+                group.items.sort((a, b) => {
+                    if (!a.time) return 1;
+                    if (!b.time) return -1;
+                    return a.time.localeCompare(b.time);
+                });
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'section-title';
+                header.innerText = group.title;
+                grid.appendChild(header);
+
+                // Cards
+                group.items.forEach(pill => {
+                    const isChecked = checkedSet.has(`${pill.name}|${pill.time || ''}`);
+                    const doseInstr = [pill.dose, pill.instructions].filter(Boolean).join(' • ');
+
+                    const card = document.createElement('div');
+                    card.className = 'pill-card';
+                    card.innerHTML = `
+                        <div class="card-header-row">
+                             <div class="card-left">
+                                <input type="checkbox" class="round-checkbox" 
+                                    ${isChecked ? 'checked' : ''} 
+                                    onchange="togglePill('${pill.id}', this)"
+                                >
+                                <div class="pill-name">${pill.name}</div>
+                            </div>
+                            <div class="pill-time">${pill.time || ''}</div>
+                        </div>
+                        
+                        <div class="card-middle">
+                            ${doseInstr}
+                        </div>
+                        
+                        ${pill.comment ? `<div class="card-bottom">${pill.comment}</div>` : ''}
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+
+            const addCard = `<div class="pill-card add-card" onclick="openAddModal()">
+                <div class="text-slate-400 font-medium">+ Добавить препарат</div>
+            </div>`;
+            grid.insertAdjacentHTML('beforeend', addCard);
+        }
+
+        async function togglePill(id, checkbox) {
+            const pill = pills.find(p => p.id == id);
+            if (!pill) return;
+
+            const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
+            const today = new Date().toLocaleDateString();
+
+            if (checkbox.checked) {
+                // Log it
+                showToast(`Принято: ${pill.name}`);
+
+                const newLog = {
+                    name: pill.name,
+                    amount: pill.dose,
+                    time: pill.time, // SAVE TIME for matching!
+                    timestamp: new Date().toISOString()
+                };
+
+                history.push(newLog);
+                localStorage.setItem('pillHistory', JSON.stringify(history));
+                renderHistoryLocal();
+
+                // Send to server
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'pills',
+                            pillName: pill.name,
+                            amount: pill.dose,
+                            comment: 'Quick Checkbox'
+                        })
+                    });
+
+                } catch (e) {
+                    showToast('Ошибка сохранения в облако');
+                }
+
+            } else {
+                // UNCHECK LOGIC
+                // Find index of today's log for this pill
+                // We search backwards to find the latest one to remove
+                let indexToRemove = -1;
+                for (let i = history.length - 1; i >= 0; i--) {
+                    const h = history[i];
+                    if (h.name === pill.name &&
+                        (h.time === pill.time) &&
+                        new Date(h.timestamp).toLocaleDateString() === today) {
+                        indexToRemove = i;
+                        break;
+                    }
+                }
+
+                if (indexToRemove > -1) {
+                    history.splice(indexToRemove, 1);
+                    localStorage.setItem('pillHistory', JSON.stringify(history));
+                    renderHistoryLocal();
+                    showToast('Отменено (локально)');
+                } else {
+                    showToast('Запись не найдена в истории');
+                }
+            }
+        }
+
+        // --- Actions ---
+
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'flex';
+        }
+
+        function addPill() {
+            const name = document.getElementById('newPillName').value;
+            const dose = document.getElementById('newPillDose').value;
+            const icon = document.getElementById('newPillIcon').value;
+
+            if (!name) return alert('Введите название!');
+
+            const newPill = {
+                id: Date.now(),
+                name,
+                dose,
+                icon
+            };
+
+            pills.push(newPill);
+            localStorage.setItem('myPills', JSON.stringify(pills));
+            renderPills();
+            closeModal('addModal');
+
+            // Clear inputs
+            document.getElementById('newPillName').value = '';
+            document.getElementById('newPillDose').value = '';
+        }
+
+        function deletePill(id) {
+            if (confirm('Удалить этот препарат?')) {
+                pills = pills.filter(p => p.id !== id);
+                localStorage.setItem('myPills', JSON.stringify(pills));
+                renderPills();
+            }
+        }
+
+        function openLogModal(id) {
+            activePillId = id;
+            const pill = pills.find(p => p.id === id);
+            document.getElementById('logPillName').innerText = pill.name;
+            document.getElementById('logPillDose').innerText = pill.dose;
+            document.getElementById('logComment').value = '';
+            document.getElementById('logModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function confirmLog() {
+            const btn = document.getElementById('confirmLogBtn');
+            const pill = pills.find(p => p.id === activePillId);
+            const comment = document.getElementById('logComment').value;
+
+            // UI Feedback
+            btn.innerText = 'Отправка...';
+            btn.disabled = true;
+
+            const payload = {
+                type: 'pills',
+                pillName: pill.name,
+                amount: pill.dose,
+                comment: comment,
+                date: new Date().toISOString()
+            };
+
+            // Save to local history immediately for responsiveness
+            const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
+            history.push({
+                timestamp: Date.now(),
+                name: pill.name,
+                amount: pill.dose
+            });
+            localStorage.setItem('pillHistory', JSON.stringify(history));
+
+            // Optimistically add to UI list?
+            // renderHistory() - No, let's wait for refresh or just append manually for now
+            const list = document.getElementById('historyList');
+            if (list.innerText.includes('нет (из облака)')) list.innerHTML = '';
+
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <span class="history-name">${pill.name} <span class="text-slate-500 text-xs">(только что)</span></span>
+                <span class="history-time">...</span>
+            `;
+            list.prepend(item);
+
+            // Send to Google Sheets
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Important for Google Script
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(() => {
+                    showToast('Записано! ✅');
+                    closeModal('logModal');
+                    // Re-fetch to sync?
+                    setTimeout(fetchRemoteData, 2000);
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Ошибка сети (сохранено локально)');
+                    closeModal('logModal');
+                })
+                .finally(() => {
+                    btn.innerText = '✅ Принять и записать';
+                    btn.disabled = false;
+                });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg || 'Записано! ✅';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modal on click outside
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
