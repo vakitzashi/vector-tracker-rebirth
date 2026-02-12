@@ -492,9 +492,10 @@
                             const rowStr = row.join("").trim();
                             if (!rowStr) continue;
 
-                            // Map Columns
-                            // 0: Time, 1: Name, 2: Dose, 3: Freq, 4: Instr, 5: Comment
-                            const pName = row[1] ? String(row[1]).trim() : "";
+                            // Map Columns (after adding B, C, D)
+                            // 0: Time (A), 1: Start Date (B), 2: Finish Date (C), 3: Duration (D)
+                            // 4: Name (E), 5: Dose (F), 6: Freq (G), 7: Instr (H), 8: Comment (I)
+                            const pName = row[4] ? String(row[4]).trim() : "";
                             // if (!pName && rowStr.length < 5) continue; // Skip noise? No, let's show everything to be safe.
 
                             const displayName = pName || `(Без названия) Стр.${i + 1}`;
@@ -508,14 +509,27 @@
                                 timeDisplay = timeDisplay.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             }
 
+                            // Parse dates
+                            const startDate = parseGoogleSheetDate(row[1]);
+                            const finishDate = parseGoogleSheetDate(row[2]);
+
+                            // Skip if finish date has passed
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            if (finishDate && finishDate < today) {
+                                continue; // Skip this pill
+                            }
+
                             newPills.push({
                                 id: String(Date.now() + i),
                                 name: displayName,
-                                dose: String(row[2] || ''),
+                                dose: String(row[5] || ''),
                                 icon: getIconForName(displayName),
                                 time: String(timeDisplay || ''),
-                                instructions: String(row[4] || ''),
-                                comment: String(row[5] || '')
+                                instructions: String(row[7] || ''),
+                                comment: String(row[8] || ''),
+                                startDate: startDate,
+                                finishDate: finishDate
                             });
                         }
 
@@ -592,6 +606,39 @@
             if (n.includes('сн') || n.includes('мел')) return '🌙';
             if (n.includes('бол') || n.includes('гол')) return '🤕';
             return '💊';
+        }
+
+        function parseGoogleSheetDate(value) {
+            if (!value) return null;
+            if (typeof value !== 'string') return null;
+            
+            const dateStr = String(value).trim();
+            if (!dateStr) return null;
+            
+            // Try parsing as ISO or common formats
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
+            
+            return null;
+        }
+
+        function formatDateRu(date) {
+            if (!date) return '';
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return date.toLocaleDateString('ru-RU', options);
+        }
+
+        function getDurationDays(startDate) {
+            if (!startDate) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const diffMs = today - start;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            return diffDays >= 0 ? diffDays : null;
         }
 
         // Removed mergeHistory/checkForNewPills because we are syncing Config now.
@@ -680,6 +727,12 @@
                 group.items.forEach(pill => {
                     const isChecked = checkedSet.has(`${pill.name}|${pill.time || ''}`);
                     const doseInstr = [pill.dose, pill.instructions].filter(Boolean).join(' • ');
+                    
+                    // Calculate duration and deadline
+                    const durationDays = getDurationDays(pill.startDate);
+                    const deadlineText = pill.finishDate ? `До: ${formatDateRu(pill.finishDate)}` : '';
+                    const durationText = durationDays !== null ? `Принимается: ${durationDays} дн.` : '';
+                    const datesInfo = [durationText, deadlineText].filter(Boolean).join(' | ');
 
                     const card = document.createElement('div');
                     card.className = 'pill-card';
@@ -699,6 +752,7 @@
                             ${doseInstr}
                         </div>
                         
+                        ${datesInfo ? `<div class="card-bottom" style="color: #cbd5e1; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 4px;">${datesInfo}</div>` : ''}
                         ${pill.comment ? `<div class="card-bottom">${pill.comment}</div>` : ''}
                     `;
                     grid.appendChild(card);
