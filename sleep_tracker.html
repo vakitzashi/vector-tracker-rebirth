@@ -318,6 +318,98 @@
         .back-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+
+        .temp-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .temp-picker-box {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 32px;
+            text-align: center;
+            width: 340px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .temp-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 30px;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .numpad-btn {
+            padding: 20px;
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .numpad-btn:active {
+            background: var(--accent);
+            transform: scale(0.95);
+        }
+
+        .numpad-btn:hover {
+            background: #475569;
+        }
+
+        .temp-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .temp-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .temp-actions .btn-cancel {
+            background: #334155;
+            color: white;
+        }
+
+        .temp-actions .btn-confirm {
+            background: var(--accent);
+            color: white;
+        }
+
+        .temp-actions .btn-delete {
+            background: #64748b;
+            color: white;
+            padding: 12px 20px;
+        }
     </style>
 </head>
 
@@ -434,7 +526,30 @@
         <button class="btn-submit text-white" id="submitBtn" onclick="submitDiary()">ЗАПИСАТЬ ДАННЫЕ</button>
     </div>
 
-    <!-- Модалка часов остается без изменений -->
+    <!-- Модалка для ввода температуры спальни -->
+    <div id="tempModal" class="temp-modal">
+        <div class="temp-picker-box">
+            <div class="temp-display" id="tempDisplay">0</div>
+            <div class="numpad">
+                <button class="numpad-btn" onclick="addTempDigit('1')">1</button>
+                <button class="numpad-btn" onclick="addTempDigit('2')">2</button>
+                <button class="numpad-btn" onclick="addTempDigit('3')">3</button>
+                <button class="numpad-btn" onclick="addTempDigit('4')">4</button>
+                <button class="numpad-btn" onclick="addTempDigit('5')">5</button>
+                <button class="numpad-btn" onclick="addTempDigit('6')">6</button>
+                <button class="numpad-btn" onclick="addTempDigit('7')">7</button>
+                <button class="numpad-btn" onclick="addTempDigit('8')">8</button>
+                <button class="numpad-btn" onclick="addTempDigit('9')">9</button>
+                <button class="numpad-btn" onclick="addTempDigit('.')">.</button>
+                <button class="numpad-btn" onclick="addTempDigit('0')">0</button>
+                <button class="numpad-btn temp-actions" onclick="clearTemp()" style="grid-column: span 1; padding: 20px;">←</button>
+            </div>
+            <div class="temp-actions">
+                <button class="btn-cancel" onclick="closeTempModal(false)">ОТМЕНА</button>
+                <button class="btn-confirm" onclick="closeTempModal(true)">ГОТОВО</button>
+            </div>
+        </div>
+    </div>
     <div id="clockModal" class="clock-modal">
         <div class="clock-picker-box">
             <div class="mode-toggle">
@@ -521,24 +636,21 @@
         function openTempPicker(id) {
             state.activeId = id;
             state.isTemperatureMode = true;
-            state.currentTemp = state.temps[id];
-            document.getElementById('clockModal').style.display = 'flex';
-            updateTempUI(); drawTemp();
+            state.currentTemp = String(state.temps[id]);
+            document.getElementById('tempDisplay').innerText = state.currentTemp;
+            document.getElementById('tempModal').style.display = 'flex';
         }
 
         function switchPickerMode(m) { 
-            if (!state.isTemperatureMode) {
-                state.mode = m; 
-                updateUI(); 
-                draw();
-            }
+            state.mode = m; 
+            updateUI(); 
+            draw();
         }
 
         function updateUI() {
             document.getElementById('clockTimePreview').innerText = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
             document.getElementById('btnModeHours').className = `mode-btn ${state.mode === 'hours' ? 'active' : ''}`;
             document.getElementById('btnModeMinutes').className = `mode-btn ${state.mode === 'minutes' ? 'active' : ''}`;
-            document.querySelector('.mode-toggle').classList.remove('hidden');
         }
 
         function draw() {
@@ -580,23 +692,19 @@
         }
 
         function handleInput(e) {
-            if (state.isTemperatureMode) {
-                handleTempInput(e);
-            } else {
-                const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const x = clientX - rect.left; const y = clientY - rect.top;
-                const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
-                let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-                if (angle < 0) angle += 360;
-                if (state.mode === 'hours') {
-                    let h = Math.round(angle / 30) % 12;
-                    if (dist > (innerR + outerR) / 2) state.tempH = h === 0 ? 0 : h + 12;
-                    else state.tempH = h === 0 ? 12 : h;
-                } else { state.tempM = Math.round(angle / 6) % 60; }
-                updateUI(); draw();
-            }
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left; const y = clientY - rect.top;
+            const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            if (state.mode === 'hours') {
+                let h = Math.round(angle / 30) % 12;
+                if (dist > (innerR + outerR) / 2) state.tempH = h === 0 ? 0 : h + 12;
+                else state.tempH = h === 0 ? 12 : h;
+            } else { state.tempM = Math.round(angle / 6) % 60; }
+            updateUI(); draw();
         }
 
         canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleInput(e); });
@@ -676,19 +784,39 @@
             drawTemp();
         }
 
-        function closeClock(save) {
-            if (state.isTemperatureMode) {
-                if (save) {
-                    state.temps[state.activeId] = state.currentTemp;
-                    document.getElementById(state.activeId + 'Display').innerText = state.currentTemp.toFixed(1);
+        function addTempDigit(digit) {
+            if (state.currentTemp === '0' && digit !== '.') {
+                state.currentTemp = digit;
+            } else if (digit === '.') {
+                if (!state.currentTemp.includes('.')) {
+                    state.currentTemp += digit;
                 }
-                state.isTemperatureMode = false;
             } else {
-                if (save) {
-                    const timeStr = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
-                    state.times[state.activeId] = timeStr;
-                    document.getElementById(state.activeId + 'Display').innerText = timeStr;
-                }
+                state.currentTemp += digit;
+            }
+            document.getElementById('tempDisplay').innerText = state.currentTemp;
+        }
+
+        function clearTemp() {
+            state.currentTemp = '0';
+            document.getElementById('tempDisplay').innerText = state.currentTemp;
+        }
+
+        function closeTempModal(save) {
+            if (save) {
+                const tempValue = parseFloat(state.currentTemp) || 0;
+                state.temps[state.activeId] = tempValue;
+                document.getElementById(state.activeId + 'Display').innerText = tempValue.toFixed(1);
+            }
+            document.getElementById('tempModal').style.display = 'none';
+            state.isTemperatureMode = false;
+        }
+
+        function closeClock(save) {
+            if (save) {
+                const timeStr = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
+                state.times[state.activeId] = timeStr;
+                document.getElementById(state.activeId + 'Display').innerText = timeStr;
             }
             document.getElementById('clockModal').style.display = 'none';
         }
