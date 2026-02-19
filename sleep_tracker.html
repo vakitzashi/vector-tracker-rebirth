@@ -275,6 +275,10 @@
             margin-bottom: 20px;
         }
 
+        .mode-toggle.hidden {
+            display: none;
+        }
+
         .mode-btn {
             padding: 5px 15px;
             border-radius: 8px;
@@ -344,6 +348,20 @@
                 <div class="clock-container" onclick="openClock('wakeUpTime')">
                     <span class="label">Проснулся</span>
                     <div id="wakeUpTimeDisplay" class="text-xl font-bold">07:00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-4 text-indigo-300">Температура</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="clock-container" onclick="openTempPicker('tempMorning')">
+                    <span class="label">🌡️ t - утром</span>
+                    <div id="tempMorningDisplay" class="text-xl font-bold">36.6</div>
+                </div>
+                <div class="clock-container" onclick="openTempPicker('tempEvening')">
+                    <span class="label">🌡️ t - вечером</span>
+                    <div id="tempEveningDisplay" class="text-xl font-bold">36.6</div>
                 </div>
             </div>
         </div>
@@ -435,13 +453,16 @@
 
     <script>
         // REPLACE WITH YOUR NEW DEPLOYMENT URL AFTER UPDATING SCRIPT
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbsVrUwAPwsz5eWmsBK3ogYfxy62S6BO_Y44rMHXcyLfnDMJJQmmaZ2__GsAq6WzBoqA/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-mc7pqRm_eXKdRl70N9YUF-G7BwfB4cy3cFhDmBRaPObnG289Z96GfRi0ubBrsZWdiw/exec';
 
         const state = {
             times: { bedTime: "22:00", lightOffTime: "22:15", wakeUpTime: "07:00" },
+            temps: { tempMorning: 36.6, tempEvening: 36.6 },
             activeId: null, tempH: 22, tempM: 0, mode: 'hours', isDragging: false,
             awakenings: 0,
-            dreamType: 'Нейтральный'
+            dreamType: 'Нейтральный',
+            isTemperatureMode: false,
+            currentTemp: 36.6
         };
 
         document.getElementById('sleepDate').valueAsDate = new Date();
@@ -497,12 +518,27 @@
             updateUI(); draw();
         }
 
-        function switchPickerMode(m) { state.mode = m; updateUI(); draw(); }
+        function openTempPicker(id) {
+            state.activeId = id;
+            state.isTemperatureMode = true;
+            state.currentTemp = state.temps[id];
+            document.getElementById('clockModal').style.display = 'flex';
+            updateTempUI(); drawTemp();
+        }
+
+        function switchPickerMode(m) { 
+            if (!state.isTemperatureMode) {
+                state.mode = m; 
+                updateUI(); 
+                draw();
+            }
+        }
 
         function updateUI() {
             document.getElementById('clockTimePreview').innerText = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
             document.getElementById('btnModeHours').className = `mode-btn ${state.mode === 'hours' ? 'active' : ''}`;
             document.getElementById('btnModeMinutes').className = `mode-btn ${state.mode === 'minutes' ? 'active' : ''}`;
+            document.querySelector('.mode-toggle').classList.remove('hidden');
         }
 
         function draw() {
@@ -544,30 +580,115 @@
         }
 
         function handleInput(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const x = clientX - rect.left; const y = clientY - rect.top;
-            const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
-            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-            if (angle < 0) angle += 360;
-            if (state.mode === 'hours') {
-                let h = Math.round(angle / 30) % 12;
-                if (dist > (innerR + outerR) / 2) state.tempH = h === 0 ? 0 : h + 12;
-                else state.tempH = h === 0 ? 12 : h;
-            } else { state.tempM = Math.round(angle / 6) % 60; }
-            updateUI(); draw();
+            if (state.isTemperatureMode) {
+                handleTempInput(e);
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const x = clientX - rect.left; const y = clientY - rect.top;
+                const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
+                let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                if (angle < 0) angle += 360;
+                if (state.mode === 'hours') {
+                    let h = Math.round(angle / 30) % 12;
+                    if (dist > (innerR + outerR) / 2) state.tempH = h === 0 ? 0 : h + 12;
+                    else state.tempH = h === 0 ? 12 : h;
+                } else { state.tempM = Math.round(angle / 6) % 60; }
+                updateUI(); draw();
+            }
         }
 
         canvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleInput(e); });
         window.addEventListener('mousemove', (e) => { if (state.isDragging) handleInput(e); });
         window.addEventListener('mouseup', () => { if (state.isDragging) { state.isDragging = false; if (state.mode === 'hours') setTimeout(() => switchPickerMode('minutes'), 300); } });
 
+        function updateTempUI() {
+            document.getElementById('clockTimePreview').innerText = state.currentTemp.toFixed(1) + '°C';
+            document.querySelector('.mode-toggle').classList.add('hidden');
+        }
+
+        function drawTemp() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); 
+            ctx.arc(cx, cy, outerR + 15, 0, Math.PI * 2); 
+            ctx.fillStyle = '#1e293b'; 
+            ctx.fill();
+            
+            // Рисуем значения температуры от 35 до 39 градусов
+            ctx.font = '14px Inter'; 
+            ctx.textAlign = 'center'; 
+            ctx.textBaseline = 'middle';
+            
+            for (let i = 0; i < 9; i++) {
+                const tempVal = 35 + i * 0.5;
+                const angle = (i * 40 - 90) * (Math.PI / 180);
+                const r = minuteR;
+                const x = cx + r * Math.cos(angle); 
+                const y = cy + r * Math.sin(angle);
+                const isSelected = (Math.abs(state.currentTemp - tempVal) < 0.1);
+                
+                if (isSelected) {
+                    ctx.beginPath(); 
+                    ctx.arc(x, y, 14, 0, Math.PI * 2); 
+                    ctx.fillStyle = '#818cf8'; 
+                    ctx.fill(); 
+                    ctx.fillStyle = '#fff';
+                } else { 
+                    ctx.fillStyle = '#64748b'; 
+                }
+                ctx.fillText(tempVal.toFixed(1), x, y);
+            }
+            
+            // Линия и точка для текущего значения
+            const angle = ((state.currentTemp - 35) * 8 - 90) * (Math.PI / 180);
+            const r = minuteR;
+            const tx = cx + r * Math.cos(angle); 
+            const ty = cy + r * Math.sin(angle);
+            
+            ctx.beginPath(); 
+            ctx.moveTo(cx, cy); 
+            ctx.lineTo(tx, ty); 
+            ctx.strokeStyle = '#818cf8'; 
+            ctx.lineWidth = 2; 
+            ctx.stroke();
+            
+            ctx.beginPath(); 
+            ctx.arc(tx, ty, 18, 0, Math.PI * 2); 
+            ctx.fillStyle = 'rgba(129, 140, 248, 0.4)'; 
+            ctx.fill();
+        }
+
+        function handleTempInput(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left; 
+            const y = clientY - rect.top;
+            const dx = x - cx; 
+            const dy = y - cy;
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            
+            const tempValue = (angle / 40) + 35;
+            state.currentTemp = Math.max(35, Math.min(39, Math.round(tempValue * 2) / 2));
+            updateTempUI(); 
+            drawTemp();
+        }
+
         function closeClock(save) {
-            if (save) {
-                const timeStr = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
-                state.times[state.activeId] = timeStr;
-                document.getElementById(state.activeId + 'Display').innerText = timeStr;
+            if (state.isTemperatureMode) {
+                if (save) {
+                    state.temps[state.activeId] = state.currentTemp;
+                    document.getElementById(state.activeId + 'Display').innerText = state.currentTemp.toFixed(1);
+                }
+                state.isTemperatureMode = false;
+            } else {
+                if (save) {
+                    const timeStr = `${String(state.tempH).padStart(2, '0')}:${String(state.tempM).padStart(2, '0')}`;
+                    state.times[state.activeId] = timeStr;
+                    document.getElementById(state.activeId + 'Display').innerText = timeStr;
+                }
             }
             document.getElementById('clockModal').style.display = 'none';
         }
@@ -577,16 +698,18 @@
             const hasDreams = document.getElementById('dreamsToggle').checked;
 
             const payload = {
-                type: 'sleep', // Explicit type
+                type: 'sleep',
                 date: document.getElementById('sleepDate').value,
                 bedTime: state.times.bedTime,
                 lightOffTime: state.times.lightOffTime,
                 wakeUpTime: state.times.wakeUpTime,
-                quality: document.getElementById('qualityRange').value,
-                energy: document.getElementById('energyRange').value,
+                quality: parseInt(document.getElementById('qualityRange').value),
+                energy: parseInt(document.getElementById('energyRange').value),
                 awakeningCount: state.awakenings,
                 dreams: hasDreams ? "Да" : "Нет",
                 dreamType: hasDreams ? state.dreamType : "",
+                tempEvening: parseFloat(state.temps.tempEvening),
+                tempMorning: parseFloat(state.temps.tempMorning),
                 comment: document.getElementById('comment').value
             };
 
