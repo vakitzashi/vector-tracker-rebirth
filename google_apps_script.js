@@ -3,14 +3,11 @@ function doGet(e) {
   var result = {};
 
   try {
-    // 1. Find sheet (Fuzzy)
     var sheets = ss.getSheets();
     var targetSheet = null;
 
-    // Exact
     targetSheet = ss.getSheetByName("PILLS TRACKER");
 
-    // Fuzzy
     if (!targetSheet) {
       for (var i = 0; i < sheets.length; i++) {
         if (sheets[i].getName().toUpperCase().indexOf("PILL") > -1) {
@@ -22,11 +19,9 @@ function doGet(e) {
 
     if (targetSheet) {
       result.sheet_name = targetSheet.getName();
-      // READ EVERYTHING. NO FILTERING.
       var dataRange = targetSheet.getDataRange();
       var values = dataRange.getValues();
 
-      // Send raw 2D array. Let frontend handle it.
       result.raw_data = values;
       result.status = "success";
     } else {
@@ -49,11 +44,9 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var sheet;
 
-    // --- PILLS HANDLING ---
     if (data.type === "pills") {
       sheet = ss.getSheetByName("PILLS TRACKER");
       if (!sheet) {
-        // Fuzzy find pills
         var sheets = ss.getSheets();
         for (var i = 0; i < sheets.length; i++) {
           if (sheets[i].getName().toUpperCase().indexOf("PILL") > -1) {
@@ -70,10 +63,8 @@ function doPost(e) {
       }
 
     } else {
-      // --- SLEEP HANDLING ---
       var sSheet = ss.getSheetByName("SLEEP TRACKER");
       if (!sSheet) {
-        // Fuzzy find sleep
         var sheets = ss.getSheets();
         for (var i = 0; i < sheets.length; i++) {
           if (sheets[i].getName().toUpperCase().indexOf("SLEEP") > -1 ||
@@ -86,7 +77,6 @@ function doPost(e) {
       }
 
       if (sSheet) {
-        // Determine if date is passed or needs creation
         var dateVal = data.date || new Date();
 
         sSheet.appendRow([
@@ -111,3 +101,4 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
