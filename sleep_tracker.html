@@ -206,7 +206,6 @@
             outline: none;
         }
 
-        /* Стили для выбора типа сна */
         .dream-type-selector {
             display: flex;
             background: rgba(15, 23, 42, 0.5);
@@ -504,7 +503,6 @@
                 </label>
             </div>
 
-            <!-- Трехпозиционный переключатель типа снов -->
             <div id="dreamTypeSelector" class="dream-type-selector">
                 <div class="dream-option" onclick="setDreamType('Кошмары')">
                     <span>👿</span>Кошмары
@@ -526,7 +524,6 @@
         <button class="btn-submit text-white" id="submitBtn" onclick="submitDiary()">ЗАПИСАТЬ ДАННЫЕ</button>
     </div>
 
-    <!-- Модалка для ввода температуры спальни -->
     <div id="tempModal" class="temp-modal">
         <div class="temp-picker-box">
             <div class="temp-display" id="tempDisplay">0</div>
@@ -567,7 +564,6 @@
     </div>
 
     <script>
-        // REPLACE WITH YOUR NEW DEPLOYMENT URL AFTER UPDATING SCRIPT
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-mc7pqRm_eXKdRl70N9YUF-G7BwfB4cy3cFhDmBRaPObnG289Z96GfRi0ubBrsZWdiw/exec';
 
         const state = {
@@ -618,7 +614,6 @@
             document.getElementById('awakeningsCount').innerText = state.awakenings;
         }
 
-        // Часы
         const canvas = document.getElementById('clockCanvas');
         const ctx = canvas.getContext('2d');
         const cx = canvas.width / 2;
@@ -723,7 +718,6 @@
             ctx.fillStyle = '#1e293b'; 
             ctx.fill();
             
-            // Рисуем значения температуры от 35 до 39 градусов
             ctx.font = '14px Inter'; 
             ctx.textAlign = 'center'; 
             ctx.textBaseline = 'middle';
@@ -748,7 +742,6 @@
                 ctx.fillText(tempVal.toFixed(1), x, y);
             }
             
-            // Линия и точка для текущего значения
             const angle = ((state.currentTemp - 35) * 8 - 90) * (Math.PI / 180);
             const r = minuteR;
             const tx = cx + r * Math.cos(angle); 
@@ -844,7 +837,6 @@
             btn.disabled = true;
             btn.innerText = "ОТПРАВКА...";
 
-            // Use fetch with no-cors standard
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -855,7 +847,6 @@
                     body: JSON.stringify(payload)
                 });
 
-                // Success (blindly assumes success due to no-cors)
                 btn.innerText = "ЗАПИСАНО! ✅";
                 btn.classList.add('bg-green-600');
                 setTimeout(() => {
@@ -877,4 +868,3 @@
 </body>
 
 </html>
-
