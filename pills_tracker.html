@@ -67,7 +67,6 @@
             gap: 15px;
         }
 
-        /* Grid Layout: 2 Columns */
         #pillsGrid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -75,10 +74,8 @@
             padding-bottom: 20px;
         }
 
-        /* Section Headers */
         .section-title {
             grid-column: 1 / -1;
-            /* Span full width */
             font-size: 1.1rem;
             font-weight: 700;
             color: #94a3b8;
@@ -92,10 +89,8 @@
             gap: 8px;
         }
 
-        /* Card Styles - Dark Theme Compact */
         .pill-card {
             background: #1e293b;
-            /* Dark Slate 800 */
             border-radius: 12px;
             padding: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
@@ -111,11 +106,9 @@
             transform: scale(0.98);
         }
 
-        /* Top Row: Checkbox - Name - Time */
         .card-top {
             display: flex;
             flex-direction: column;
-            /* Stack for narrow width */
             align-items: flex-start;
             gap: 6px;
             width: 100%;
@@ -141,18 +134,15 @@
             color: #f1f5f9;
             line-height: 1.2;
             word-break: break-word;
-            /* Prevent overflow */
         }
 
         .pill-time {
             font-size: 1.1rem;
             font-weight: 700;
             color: #818cf8;
-            /* Indigo-400 */
             white-space: nowrap;
         }
 
-        /* Middle Row: Dose & Instructions */
         .card-middle {
             text-align: left;
             font-size: 0.75rem;
@@ -162,7 +152,6 @@
             line-height: 1.3;
         }
 
-        /* Bottom Row: Comments */
         .card-bottom {
             text-align: left;
             font-size: 0.70rem;
@@ -173,10 +162,8 @@
             padding-top: 4px;
         }
 
-        /* Add Card Special Style */
         .add-card {
             grid-column: 1 / -1;
-            /* Full width at bottom */
             justify-content: center;
             align-items: center;
             background: rgba(30, 41, 59, 0.5);
@@ -187,7 +174,6 @@
             flex-direction: row;
         }
 
-        /* Circular Checkbox */
         .round-checkbox {
             position: relative;
             width: 24px;
@@ -205,7 +191,6 @@
 
         .round-checkbox:checked {
             background-color: #10b981;
-            /* Emerald-500 */
             border-color: #10b981;
         }
 
@@ -219,9 +204,6 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Delete button - hidden by default to clean UI, maybe show on swipe? 
-           For now, let's keep it very subtle in the corner or remove as per plan. 
-           User didn't ask for it in the layout description. I'll omit it from CSS/HTML for now. */
         .modal {
             position: fixed;
             top: 0;
@@ -389,7 +371,6 @@
         </div>
 
         <div id="pillsGrid" class="pill-grid">
-            <!-- Cards will be injected here -->
             <div class="pill-card add-card" onclick="openAddModal()">
                 <div class="add-icon">+</div>
                 <div>Добавить</div>
@@ -404,7 +385,6 @@
         </div>
     </div>
 
-    <!-- Add Pill Modal -->
     <div id="addModal" class="modal">
         <div class="modal-content">
             <h2 class="text-xl font-bold mb-4">Новый препарат</h2>
@@ -422,7 +402,6 @@
         </div>
     </div>
 
-    <!-- Confirm Log Modal -->
     <div id="logModal" class="modal">
         <div class="modal-content">
             <h2 class="text-xl font-bold mb-2" id="logPillName">Название</h2>
@@ -439,11 +418,8 @@
     <div id="toast" class="toast">Записано! ✅</div>
 
     <script>
-        // --- Configuration ---
-        // REPLACE WITH YOUR NEW DEPLOYMENT URL AFTER UPDATING SCRIPT
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbsVrUwAPwsz5eWmsBK3ogYfxy62S6BO_Y44rMHXcyLfnDMJJQmmaZ2__GsAq6WzBoqA/exec';
 
-        // --- State Management ---
         let pills = JSON.parse(localStorage.getItem('myPills')) || [
             { id: 1, name: 'Омега-3', dose: '1 капс.', icon: '💊' },
             { id: 2, name: 'Витамин D', dose: '2000 ME', icon: '☀️' }
@@ -451,11 +427,10 @@
         let remoteHistory = [];
         let activePillId = null;
 
-        // --- Initialization ---
         async function init() {
             renderPills();
-            renderHistoryLocal(); // Show local immediately
-            await fetchRemoteData(); // Fetch and merge
+            renderHistoryLocal();
+            await fetchRemoteData();
         }
 
         async function fetchRemoteData() {
@@ -472,11 +447,9 @@
 
                 if (data.status === 'success') {
                     if (data.raw_data && Array.isArray(data.raw_data)) {
-                        // PROCESS RAW DATA
                         const rows = data.raw_data;
                         const newPills = [];
 
-                        // Detect Header: If Row 0 has "Name" or "Название", skip it
                         let startRow = 0;
                         if (rows.length > 0) {
                             const headerStr = rows[0].join(" ").toLowerCase();
@@ -485,22 +458,14 @@
                             }
                         }
 
-                        // Loop ALL rows
                         for (let i = startRow; i < rows.length; i++) {
                             const row = rows[i];
-                            // Skip only COMPLETELY empty rows or rows with no name
                             const rowStr = row.join("").trim();
                             if (!rowStr) continue;
 
-                            // Map Columns (after adding B, C, D)
-                            // 0: Time (A), 1: Start Date (B), 2: Finish Date (C), 3: Duration (D)
-                            // 4: Name (E), 5: Dose (F), 6: Freq (G), 7: Instr (H), 8: Comment (I)
                             const pName = row[4] ? String(row[4]).trim() : "";
-                            // if (!pName && rowStr.length < 5) continue; // Skip noise? No, let's show everything to be safe.
-
                             const displayName = pName || `(Без названия) Стр.${i + 1}`;
 
-                            // Parse Time
                             let timeDisplay = row[0];
                             if (typeof timeDisplay === 'string' && timeDisplay.includes('T')) {
                                 const d = new Date(timeDisplay);
@@ -509,15 +474,13 @@
                                 timeDisplay = timeDisplay.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             }
 
-                            // Parse dates
                             const startDate = parseGoogleSheetDate(row[1]);
                             const finishDate = parseGoogleSheetDate(row[2]);
 
-                            // Skip if finish date has passed
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             if (finishDate && finishDate < today) {
-                                continue; // Skip this pill
+                                continue;
                             }
 
                             newPills.push({
@@ -538,7 +501,6 @@
                         renderPills();
                         showToast(`Загружено: ${pills.length} записей`);
 
-                        // Remove previous debug info if any
                         const oldDump = document.getElementById('debugDump');
                         if (oldDump) oldDump.remove();
 
@@ -555,17 +517,11 @@
         }
 
         function syncSchedule(scheduleData) {
-            // EMERGENCY DEBUG ALERT
-            // This will annoy the user but PROVES the data arrived
-            // alert(`Sync received ${scheduleData.length} items from sheet.`);
-
             const newPills = [];
 
             scheduleData.forEach((row, index) => {
-                // Determine name. If missing, use "Unknown"
                 const pName = row.name || `Препарат #${index + 1}`;
 
-                // Format time
                 let timeDisplay = row.time;
                 if (typeof row.time === 'string' && row.time.includes('T')) {
                     const d = new Date(row.time);
@@ -589,7 +545,6 @@
             localStorage.setItem('myPills', JSON.stringify(pills));
             renderPills();
 
-            // Dump to debug div
             const debugDiv = document.getElementById('debugDump');
             if (debugDiv) {
                 debugDiv.innerText = `UPDATED: ${new Date().toLocaleTimeString()}\nItems: ${newPills.length}\n` +
@@ -611,16 +566,15 @@
         function parseGoogleSheetDate(value) {
             if (!value) return null;
             if (typeof value !== 'string') return null;
-            
+
             const dateStr = String(value).trim();
             if (!dateStr) return null;
-            
-            // Try parsing as ISO or common formats
+
             const date = new Date(dateStr);
             if (!isNaN(date.getTime())) {
                 return date;
             }
-            
+
             return null;
         }
 
@@ -640,9 +594,6 @@
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             return diffDays >= 0 ? diffDays : null;
         }
-
-        // Removed mergeHistory/checkForNewPills because we are syncing Config now.
-        // History is local only for now to avoid confusion with Schedule rows.
 
         function renderHistoryLocal() {
             const list = document.getElementById('historyList');
@@ -665,12 +616,9 @@
             const grid = document.getElementById('pillsGrid');
             grid.innerHTML = '';
 
-            // Get today's logs for checking state. 
-            // FIX: Match by Name AND Time (if available) to avoid turning on all "Aspirins"
             const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
             const today = new Date().toLocaleDateString();
 
-            // Map of "Name|Time" -> boolean
             const checkedSet = new Set();
             history.forEach(h => {
                 if (new Date(h.timestamp).toLocaleDateString() === today) {
@@ -678,7 +626,6 @@
                 }
             });
 
-            // Prepare groups
             const groups = {
                 morning: { title: '🌅 Утро', items: [] },
                 day: { title: '☀️ День', items: [] },
@@ -688,47 +635,40 @@
             };
 
             pills.forEach(pill => {
-                // Parse time
                 let minutes = -1;
                 if (pill.time && pill.time.includes(':')) {
                     const [h, m] = pill.time.split(':').map(Number);
                     minutes = h * 60 + m;
                 }
 
-                // Categorize
                 if (minutes >= 360 && minutes < 780) groups.morning.items.push(pill);
                 else if (minutes >= 780 && minutes < 960) groups.day.items.push(pill);
-                else if (minutes >= 960 && minutes <= 1320) groups.evening.items.push(pill); // 22:00 is 1320
+                else if (minutes >= 960 && minutes <= 1320) groups.evening.items.push(pill);
                 else if (minutes > 1320 || (minutes >= 0 && minutes < 360)) groups.night.items.push(pill);
                 else groups.other.items.push(pill);
             });
 
-            // Render Groups
             const order = ['morning', 'day', 'evening', 'night', 'other'];
 
             order.forEach(key => {
                 const group = groups[key];
                 if (group.items.length === 0) return;
 
-                // Sort items by time within group
                 group.items.sort((a, b) => {
                     if (!a.time) return 1;
                     if (!b.time) return -1;
                     return a.time.localeCompare(b.time);
                 });
 
-                // Header
                 const header = document.createElement('div');
                 header.className = 'section-title';
                 header.innerText = group.title;
                 grid.appendChild(header);
 
-                // Cards
                 group.items.forEach(pill => {
                     const isChecked = checkedSet.has(`${pill.name}|${pill.time || ''}`);
                     const doseInstr = [pill.dose, pill.instructions].filter(Boolean).join(' • ');
-                    
-                    // Calculate duration and deadline
+
                     const durationDays = getDurationDays(pill.startDate);
                     const deadlineText = pill.finishDate ? `До: ${formatDateRu(pill.finishDate)}` : '';
                     const durationText = durationDays !== null ? `Принимается: ${durationDays} дн.` : '';
@@ -773,13 +713,12 @@
             const today = new Date().toLocaleDateString();
 
             if (checkbox.checked) {
-                // Log it
                 showToast(`Принято: ${pill.name}`);
 
                 const newLog = {
                     name: pill.name,
                     amount: pill.dose,
-                    time: pill.time, // SAVE TIME for matching!
+                    time: pill.time,
                     timestamp: new Date().toISOString()
                 };
 
@@ -787,7 +726,6 @@
                 localStorage.setItem('pillHistory', JSON.stringify(history));
                 renderHistoryLocal();
 
-                // Send to server
                 try {
                     await fetch(SCRIPT_URL, {
                         method: 'POST',
@@ -804,9 +742,6 @@
                 }
 
             } else {
-                // UNCHECK LOGIC
-                // Find index of today's log for this pill
-                // We search backwards to find the latest one to remove
                 let indexToRemove = -1;
                 for (let i = history.length - 1; i >= 0; i--) {
                     const h = history[i];
@@ -828,8 +763,6 @@
                 }
             }
         }
-
-        // --- Actions ---
 
         function openAddModal() {
             document.getElementById('addModal').style.display = 'flex';
@@ -854,7 +787,6 @@
             renderPills();
             closeModal('addModal');
 
-            // Clear inputs
             document.getElementById('newPillName').value = '';
             document.getElementById('newPillDose').value = '';
         }
@@ -885,7 +817,6 @@
             const pill = pills.find(p => p.id === activePillId);
             const comment = document.getElementById('logComment').value;
 
-            // UI Feedback
             btn.innerText = 'Отправка...';
             btn.disabled = true;
 
@@ -897,7 +828,6 @@
                 date: new Date().toISOString()
             };
 
-            // Save to local history immediately for responsiveness
             const history = JSON.parse(localStorage.getItem('pillHistory')) || [];
             history.push({
                 timestamp: Date.now(),
@@ -906,8 +836,6 @@
             });
             localStorage.setItem('pillHistory', JSON.stringify(history));
 
-            // Optimistically add to UI list?
-            // renderHistory() - No, let's wait for refresh or just append manually for now
             const list = document.getElementById('historyList');
             if (list.innerText.includes('нет (из облака)')) list.innerHTML = '';
 
@@ -919,10 +847,9 @@
             `;
             list.prepend(item);
 
-            // Send to Google Sheets
             fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Important for Google Script
+                mode: 'no-cors',
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8'
                 },
@@ -931,7 +858,6 @@
                 .then(() => {
                     showToast('Записано! ✅');
                     closeModal('logModal');
-                    // Re-fetch to sync?
                     setTimeout(fetchRemoteData, 2000);
                 })
                 .catch(err => {
@@ -954,7 +880,6 @@
             }, 3000);
         }
 
-        // Close modal on click outside
         window.onclick = function (event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = "none";
