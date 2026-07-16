@@ -618,7 +618,8 @@
             currentTemp: 36.6,
             recognition: null,
             isRecognizing: false,
-            voiceInputActive: false
+            voiceInputActive: false,
+            lastVoiceText: ''
         };
 
         document.getElementById('sleepDate').valueAsDate = new Date();
@@ -649,14 +650,17 @@
 
             recognition.onresult = (event) => {
                 const text = Array.from(event.results)
+                    .slice(event.resultIndex)
+                    .filter(result => result.isFinal)
                     .map(result => result[0].transcript)
                     .join(' ')
                     .trim();
 
-                if (text) {
+                if (text && text !== state.lastVoiceText) {
                     const comment = document.getElementById('comment');
                     const prefix = comment.value.trim() ? ' ' : '';
                     comment.value = `${comment.value}${prefix}${text}`;
+                    state.lastVoiceText = text;
                     status.innerText = 'Текст добавлен';
                 }
             };
@@ -675,17 +679,7 @@
 
             recognition.onend = () => {
                 state.isRecognizing = false;
-
-                if (state.voiceInputActive) {
-                    status.innerText = 'Слушаю...';
-                    setTimeout(() => {
-                        if (state.voiceInputActive && !state.isRecognizing) {
-                            startVoiceRecognition();
-                        }
-                    }, 250);
-                    return;
-                }
-
+                state.voiceInputActive = false;
                 btn.classList.remove('recording');
                 status.innerText = '';
             };
@@ -709,6 +703,7 @@
                 state.recognition.stop();
             } else {
                 state.voiceInputActive = true;
+                state.lastVoiceText = '';
                 document.getElementById('voiceBtn').classList.add('recording');
                 document.getElementById('voiceStatus').innerText = 'Слушаю...';
                 startVoiceRecognition();
