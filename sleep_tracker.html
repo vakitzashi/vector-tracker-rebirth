@@ -617,7 +617,8 @@
             isTemperatureMode: false,
             currentTemp: 36.6,
             recognition: null,
-            isRecognizing: false
+            isRecognizing: false,
+            voiceInputActive: false
         };
 
         document.getElementById('sleepDate').valueAsDate = new Date();
@@ -638,7 +639,7 @@
             const recognition = new Recognition();
             recognition.lang = 'ru-RU';
             recognition.interimResults = false;
-            recognition.continuous = false;
+            recognition.continuous = true;
 
             recognition.onstart = () => {
                 state.isRecognizing = true;
@@ -661,29 +662,56 @@
             };
 
             recognition.onerror = (event) => {
-                status.innerText = event.error === 'not-allowed'
-                    ? 'Нет доступа к микрофону'
-                    : 'Не удалось распознать речь';
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    state.voiceInputActive = false;
+                    status.innerText = 'Нет доступа к микрофону';
+                    return;
+                }
+
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                    status.innerText = 'Не удалось распознать речь';
+                }
             };
 
             recognition.onend = () => {
                 state.isRecognizing = false;
-                btn.classList.remove('recording');
-                if (status.innerText === 'Слушаю...') {
-                    status.innerText = '';
+
+                if (state.voiceInputActive) {
+                    status.innerText = 'Слушаю...';
+                    setTimeout(() => {
+                        if (state.voiceInputActive && !state.isRecognizing) {
+                            startVoiceRecognition();
+                        }
+                    }, 250);
+                    return;
                 }
+
+                btn.classList.remove('recording');
+                status.innerText = '';
             };
 
             state.recognition = recognition;
         }
 
+        function startVoiceRecognition() {
+            try {
+                state.recognition.start();
+            } catch (error) {
+                state.isRecognizing = false;
+            }
+        }
+
         function toggleVoiceInput() {
             if (!state.recognition) return;
 
-            if (state.isRecognizing) {
+            if (state.voiceInputActive) {
+                state.voiceInputActive = false;
                 state.recognition.stop();
             } else {
-                state.recognition.start();
+                state.voiceInputActive = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceStatus').innerText = 'Слушаю...';
+                startVoiceRecognition();
             }
         }
 
