@@ -177,6 +177,44 @@
             background: var(--accent);
         }
 
+        .voice-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .voice-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #334155;
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .voice-btn.recording {
+            background: #dc2626;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+        }
+
+        .voice-status {
+            min-height: 18px;
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
         .btn-submit {
             background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
             width: 100%;
@@ -516,8 +554,12 @@
             </div>
 
             <div class="input-group mt-6">
-                <label class="label">Комментарии</label>
+                <div class="voice-row">
+                    <label class="label mb-0" for="comment">Комментарии</label>
+                    <button type="button" class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="Голосовой ввод" aria-label="Голосовой ввод">🎙</button>
+                </div>
                 <textarea id="comment" rows="3" placeholder="Спорт, алкоголь, стресс..."></textarea>
+                <div class="voice-status" id="voiceStatus"></div>
             </div>
         </div>
 
@@ -573,10 +615,77 @@
             awakenings: 0,
             dreamType: 'Нейтральный',
             isTemperatureMode: false,
-            currentTemp: 36.6
+            currentTemp: 36.6,
+            recognition: null,
+            isRecognizing: false
         };
 
         document.getElementById('sleepDate').valueAsDate = new Date();
+
+        initVoiceInput();
+
+        function initVoiceInput() {
+            const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const btn = document.getElementById('voiceBtn');
+            const status = document.getElementById('voiceStatus');
+
+            if (!Recognition) {
+                btn.disabled = true;
+                status.innerText = 'Голосовой ввод не поддерживается в этом браузере';
+                return;
+            }
+
+            const recognition = new Recognition();
+            recognition.lang = 'ru-RU';
+            recognition.interimResults = false;
+            recognition.continuous = false;
+
+            recognition.onstart = () => {
+                state.isRecognizing = true;
+                btn.classList.add('recording');
+                status.innerText = 'Слушаю...';
+            };
+
+            recognition.onresult = (event) => {
+                const text = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join(' ')
+                    .trim();
+
+                if (text) {
+                    const comment = document.getElementById('comment');
+                    const prefix = comment.value.trim() ? ' ' : '';
+                    comment.value = `${comment.value}${prefix}${text}`;
+                    status.innerText = 'Текст добавлен';
+                }
+            };
+
+            recognition.onerror = (event) => {
+                status.innerText = event.error === 'not-allowed'
+                    ? 'Нет доступа к микрофону'
+                    : 'Не удалось распознать речь';
+            };
+
+            recognition.onend = () => {
+                state.isRecognizing = false;
+                btn.classList.remove('recording');
+                if (status.innerText === 'Слушаю...') {
+                    status.innerText = '';
+                }
+            };
+
+            state.recognition = recognition;
+        }
+
+        function toggleVoiceInput() {
+            if (!state.recognition) return;
+
+            if (state.isRecognizing) {
+                state.recognition.stop();
+            } else {
+                state.recognition.start();
+            }
+        }
 
         function updateRange(type) {
             const val = document.getElementById(type + 'Range').value;
